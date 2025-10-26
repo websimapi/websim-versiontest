@@ -38,16 +38,19 @@ async function checkForNewVersion() {
         console.log("Fetched comments:", commentsData);
 
         let latestVersion = null;
+        let latestVersionCommentFound = false;
 
         // Find the pinned comment by the owner
         if (commentsData && commentsData.comments && commentsData.comments.data) {
             for (const item of commentsData.comments.data) {
                 const comment = item.comment;
+                // A pinned comment by the project owner is the source of truth
                 if (comment.author.id === ownerId && comment.pinned) {
                     const versionNumber = comment.raw_content.trim();
-                    // Ensure the content is a valid version number (integer)
+                    // Ensure the content is a valid version number (non-negative integer)
                     if (/^\d+$/.test(versionNumber)) {
                         latestVersion = versionNumber;
+                        latestVersionCommentFound = true;
                         console.log(`Found pinned version comment by owner: Version ${latestVersion}`);
                         break; // Found the definitive version, no need to check others
                     }
@@ -55,30 +58,36 @@ async function checkForNewVersion() {
             }
         }
 
-        if (latestVersion) {
+        if (latestVersionCommentFound) {
             // The user's prompt indicated a URL structure like /@username/slug/version
-            // Let's adopt this instead of slug-version for more clarity.
             const baseUrl = `https://websim.com/@${owner.username}/`;
-            const baseSlug = project.slug.replace(/\/\d+$/, ''); // Remove trailing /<version>
+            
+            // The base slug is the project slug without any trailing version number.
+            // e.g., if slug is "my-project/1", base slug is "my-project".
+            // if slug is "my-project", base slug is "my-project".
+            const baseSlug = project.slug.replace(/(?:\/\d+)?$/, '').split('/')[0];
+            
+            // Extract the current version from the URL path, if it exists.
             const currentPath = window.location.pathname;
             const currentVersionMatch = currentPath.match(/\/(\d+)$/);
             const currentVersion = currentVersionMatch ? currentVersionMatch[1] : null;
 
             console.log(`Base slug: ${baseSlug}, Current version: ${currentVersion}, Target version: ${latestVersion}`);
 
-            // Redirect if the current version doesn't match the pinned version
+            // Redirect if the current version doesn't match the pinned version.
+            // This handles cases where we are on a base slug (currentVersion is null) or an old version.
             if (latestVersion !== currentVersion) {
                 const newUrl = `${baseUrl}${baseSlug}/${latestVersion}`;
                 console.log(`New version found! Redirecting to ${newUrl}`);
                 window.location.href = newUrl;
                 return; // Stop execution to allow redirection
             } else {
-                console.log("Already on the version specified in the pinned comment.");
+                console.log("You are on the correct version specified in the pinned comment.");
                 showContent();
             }
         } else {
-            // No pinned version comment found from the owner. This is the latest version.
-            console.log("No pinned version comment found. This is the latest version.");
+            // No valid pinned version comment found from the owner.
+            console.log("No pinned version comment found from the owner. This is considered the latest version.");
             showContent();
         }
 

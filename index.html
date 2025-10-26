@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Version Control via Comments</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="loader">
+        <h1>Checking for the latest version...</h1>
+        <p>Please wait.</p>
+    </div>
+
+    <div id="content" class="hidden">
+        <h1>Welcome!</h1>
+        <p>You are on the latest version of this site.</p>
+        <p>To publish a new version:</p>
+        <ol>
+            <li>Create a new project (e.g., by forking this one).</li>
+            <li>Copy the new project's ID from its URL.</li>
+            <li>Return to this (the old) project.</li>
+            <li>As the project owner, post a comment with the exact text:<br><code>VERSION:new_project_id_here</code></li>
+        </ol>
+        <p>Visitors to this old version will now be automatically redirected to the new one.</p>
+        <hr>
+        <p><strong>Current Project ID:</strong> <span id="current-project-id"></span></p>
+    </div>
+
+    <script type="module" src="version-checker.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
+

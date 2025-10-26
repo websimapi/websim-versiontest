@@ -25,6 +25,8 @@ async function checkForNewVersion() {
 
         console.log(`Current Project ID: ${currentProjectId}`);
         console.log(`Owner ID: ${ownerId}`);
+        console.log(`Project Slug: ${project.slug}`);
+        console.log(`Owner Username: ${owner.username}`);
 
         // Fetch comments for the current project
         const response = await fetch(`/api/v1/projects/${currentProjectId}/comments`);
@@ -35,33 +37,43 @@ async function checkForNewVersion() {
         
         console.log("Fetched comments:", commentsData);
 
-        const versionRegex = /^VERSION:([a-zA-Z0-9_-]+)$/;
-        let latestVersionProjectId = null;
+        let latestVersion = null;
 
-        // The API returns comments chronologically (oldest first), so we reverse the array to check the newest comments first.
-        const comments = commentsData.data.slice().reverse();
-
-        for (const item of comments) {
+        // Find the pinned comment by the owner
+        for (const item of commentsData.data) {
             const comment = item.comment;
-            // We only trust version comments from the project owner.
-            if (comment.author.id === ownerId) {
-                const match = comment.raw_content.trim().match(versionRegex);
-                if (match && match[1]) {
-                    latestVersionProjectId = match[1];
-                    console.log(`Found version comment pointing to: ${latestVersionProjectId}`);
-                    // We found the latest version comment, no need to check older ones.
-                    break; 
+            if (comment.author.id === ownerId && comment.pinned) {
+                const versionNumber = comment.raw_content.trim();
+                // Ensure the content is a valid version number (integer)
+                if (/^\d+$/.test(versionNumber)) {
+                    latestVersion = versionNumber;
+                    console.log(`Found pinned version comment by owner: Version ${latestVersion}`);
+                    break; // Found the definitive version, no need to check others
                 }
             }
         }
 
-        if (latestVersionProjectId && latestVersionProjectId !== currentProjectId) {
-            console.log(`New version found! Redirecting from ${currentProjectId} to ${latestVersionProjectId}`);
-            // Redirect to the new project URL.
-            window.location.href = `https://websim.com/p/${latestVersionProjectId}`;
+        if (latestVersion) {
+            const baseUrl = `https://websim.com/@${owner.username}/`;
+            // Strip existing version suffix (e.g., "-1", "-v2") from the current slug to get the base slug
+            const baseSlug = project.slug.replace(/[-_v]?\d+$/, '');
+            const currentVersionMatch = project.slug.match(/[-_v]?(\d+)$/);
+            const currentVersion = currentVersionMatch ? currentVersionMatch[1] : '0';
+            
+            console.log(`Base slug: ${baseSlug}, Current version: ${currentVersion}, Target version: ${latestVersion}`);
+
+            if (latestVersion !== currentVersion) {
+                const newSlug = `${baseSlug}-${latestVersion}`;
+                const newUrl = baseUrl + newSlug;
+                console.log(`New version found! Redirecting to ${newUrl}`);
+                window.location.href = newUrl;
+            } else {
+                console.log("Already on the version specified in the pinned comment.");
+                showContent();
+            }
         } else {
-            // This is the latest version, or no version comment was found.
-            console.log("This is the latest version. Displaying content.");
+            // No pinned version comment found from the owner. This is the latest version.
+            console.log("No pinned version comment found. This is the latest version.");
             showContent();
         }
 
@@ -80,4 +92,3 @@ async function checkForNewVersion() {
 
 // Run the check when the script loads
 checkForNewVersion();
-
